@@ -1,0 +1,16 @@
+{
+    "projectName": "Mcfpp",
+    "languages": [
+        {
+            "id": "mcfpp",
+            "grammar": "src/mcfpp.langium",
+            "fileExtensions": [
+                "mcfpp"
+            ],
+            "textMate": {
+                "out": "syntaxes/mcfpp.tmLanguage.json"
+            }
+        }
+    ],
+    "out": "src/generated"
+}
