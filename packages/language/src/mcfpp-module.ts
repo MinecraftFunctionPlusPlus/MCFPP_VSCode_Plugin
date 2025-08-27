@@ -1,31 +1,29 @@
 import { type Module, inject } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type PartialLangiumServices } from 'langium/lsp';
 import { McfppGeneratedModule, McfppGeneratedSharedModule } from './generated/module.js';
-import { McfppValidator, registerValidationChecks } from './mcfpp-validator.js';
-
-/**
- * Declaration of custom services - add your own service classes here.
- */
-export type McfppAddedServices = {
-    validation: {
-        McfppValidator: McfppValidator
-    }
-}
+//import { MCFPPScopeProvider } from './mcfpp-scope-provider.js';
+import { MCFPPSemanticTokenProvider } from './lsp/mcfpp-semantictoken-provider.js';
+import { registerWorkspaceListener } from './mcfpp-workspace-listener.js';
+//import { MCFPPScopeComputation } from './mcfpp-scope-computation.js';
 
 /**
  * Union of Langium default services and your custom services - use this as constructor parameter
  * of custom service classes.
  */
-export type McfppServices = LangiumServices & McfppAddedServices
+export type McfppServices = LangiumServices
 
 /**
  * Dependency injection module that overrides Langium default services and contributes the
  * declared custom services. The Langium defaults can be partially specified to override only
  * selected services, while the custom services must be fully specified.
  */
-export const McfppModule: Module<McfppServices, PartialLangiumServices & McfppAddedServices> = {
-    validation: {
-        McfppValidator: () => new McfppValidator()
+export const McfppModule: Module<McfppServices, PartialLangiumServices> = {
+    lsp: {
+        SemanticTokenProvider: (services) => new MCFPPSemanticTokenProvider(services),
+    },
+    references: {
+        //ScopeProvider: (services) => new MCFPPScopeProvider(services),
+        //ScopeComputation: (services) => new MCFPPScopeComputation(services)
     }
 };
 
@@ -58,7 +56,7 @@ export function createMcfppServices(context: DefaultSharedModuleContext): {
         McfppModule
     );
     shared.ServiceRegistry.register(Mcfpp);
-    registerValidationChecks(Mcfpp);
+    registerWorkspaceListener(Mcfpp);
     if (!context.connection) {
         // We don't run inside a language server
         // Therefore, initialize the configuration provider instantly

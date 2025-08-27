@@ -4,7 +4,7 @@ import './token'
 
 //一个mcfpp文件
 entry CompilationUnit
-    :   NamespaceDeclaration=NamespaceDeclaration?
+    :   namespaceDeclaration=NamespaceDeclaration?
         importDeclaration+=ImportDeclaration*
         typealiasDeclaration+=TypealiasDeclaration*
         topStatement=TopStatement
@@ -18,28 +18,28 @@ TopStatement
 
 //命名空间声明
 NamespaceDeclaration
-    :   DocComment? NAMESPACE Id+=Identifier (DOT Id+=Identifier)* SEMICOLON
+    :   DocComment? kw=NAMESPACE id=DOTIdentifier SEMICOLON
     ;
 
 ImportDeclaration
-    :   IMPORT importType=ImportType (AS asIdentifier=Identifier)? (FROM fromIdentifier=Identifier)? SEMICOLON
+    :   kw+=IMPORT importType=ImportType (kw+=AS asIdentifier=Identifier)? (kw+=FROM fromIdentifier=Identifier)? SEMICOLON
     ;
 
 ImportType
-    :   namespace+=Identifier (DOT namespace+=Identifier)* COLON id=(Identifier|MULT)
+    :   namespace=DOTIdentifier COLON id=(Identifier|MULT)
     ;
 
 TypealiasDeclaration
-    :   TYPEALIAS type=Type AS id=Identifier SEMICOLON
+    :   kw+=TYPEALIAS type_=Type kw+=AS id=Identifier SEMICOLON
     ;
 
 //类或函数声明
 TypeDeclaration
-    :   DocComment? declarations=Declarations
+    :   DocComment? declaration=Declaration
     ;
 
 //类或函数声明
-Declarations
+Declaration
     :   clazz=ClassDeclaration
     |   genericClass=GenericClassImplement
     |   objectClass=ObjectClassDeclaration
@@ -59,19 +59,24 @@ Declarations
 
 //类声明
 ClassDeclaration
-    :   (isStatic?=STATIC)? (isFinal?=FINAL)? (isAbstract?=ABSTRACT)? CLASS id=ClassWithoutNamespace params=ReadOnlyParams? (COLON extendedClassName+=ClassName (COMMA extendedClassName+=ClassName)*)? (body=ClassBody | SEMICOLON)
+    :   (isStatic?=STATIC)? (isFinal?=FINAL)? (isAbstract?=ABSTRACT)? kw=CLASS id=Identifier params=ReadOnlyParams? (COLON inheritance=ClassInHeritance)? (body=ClassBody | SEMICOLON)
     ;
 
+ClassInHeritance
+    :   extendedClassName+=([ClassDeclaration:Identifier]) | extendedClassName+=([InterfaceDeclaration:Identifier]) (COMMA extendedClassName+=[ClassDeclaration:Identifier] | COMMA extendedClassName+=[InterfaceDeclaration:Identifier])*
+    ;
+    
+
 ObjectClassDeclaration
-    :   (isFinal?=FINAL)? OBJECT CLASS id=ClassWithoutNamespace params=ReadOnlyParams? (COLON extendedClassName+=ClassName (COMMA extendedClassName+=ClassName)*)? (body=ClassBody | SEMICOLON)
+    :   (isFinal?=FINAL)? kw+=OBJECT kw+=CLASS id=Identifier params=ReadOnlyParams? (COLON inheritance=ClassInHeritance)? (body=ClassBody | SEMICOLON)
     ;
 
 CompileTimeClassDeclaration
-    :   CONST CLASS id=ClassWithoutNamespace (COLON extendedClassName+=ClassName (COMMA extendedClassName+=ClassName)*)? (body=ClassBody | SEMICOLON)
+    :   kw+=CONST kw+=CLASS id=Identifier (COLON inheritance=ClassInHeritance)? (body=ClassBody | SEMICOLON)
     ;
 
 NativeClassDeclaration
-    :   CLASS id=ClassWithoutNamespace ASSIGNMENT javaRefer=JavaRefer SEMICOLON
+    :   kw=CLASS id=Identifier ASSIGNMENT javaRefer=DOTIdentifier SEMICOLON
     ;
 
 ClassMemberDeclaration
@@ -95,23 +100,23 @@ ClassMember
     ;
 
 ClassFunctionDeclaration
-    :   (isOverride?=OVERRIDE)? FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL functionBody=FunctionBody RCURL
+    :   (isOverride?=OVERRIDE)? kw=FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL functionBody=FunctionBody RCURL
     ;
 
 AbstractClassFunctionDeclaration
-    :   (isOverride?=OVERRIDE)? FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? SEMICOLON
+    :   (isOverride?=OVERRIDE)? kw=FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? SEMICOLON
     ;
 
 NativeClassFunctionDeclaration
-    :   (isOverride?=OVERRIDE)? FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? ASSIGNMENT javaRefer=JavaRefer SEMICOLON
+    :   (isOverride?=OVERRIDE)? kw=FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? ASSIGNMENT javaRefer=DOTIdentifier SEMICOLON
     ;
 
 OperationOverrideDeclaration
-    :   OPERATOR op=SupportOperator params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL functionBody=FunctionBody RCURL
+    :   kw=OPERATOR op=SupportOperator params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL functionBody=FunctionBody RCURL
     ;
 
 NativeOperationOverrideDeclaration
-    :   OPERATOR op=SupportOperator params=FunctionParams (ARROW returnType=FunctionReturnType)? ASSIGNMENT javaRefer=JavaRefer SEMICOLON
+    :   kw=OPERATOR op=SupportOperator params=FunctionParams (ARROW returnType=FunctionReturnType)? ASSIGNMENT javaRefer=DOTIdentifier SEMICOLON
     ;
 
 SupportOperator returns string
@@ -134,7 +139,7 @@ SupportOperator returns string
     ;
 
 ClassFieldDeclaration
-    :   accessModifier=AccessModifier? VAR? id=Identifier (AS type_=Type)? (ASSIGNMENT initExpr=Expression)? accessor=Accessor? SEMICOLON
+    :   kw+=VAR? id=Identifier (kw+=AS type_=Type)? (ASSIGNMENT initExpr=Expression)? accessor=Accessor? SEMICOLON
     ;
 
 Accessor
@@ -142,31 +147,35 @@ Accessor
     ;
 
 Getter
-    :   GET LCURL functionBody=FunctionBody RCURL
-    |   GET ASSIGNMENT javaRefer=JavaRefer SEMICOLON
-    |   GET ASSIGNMENT expression=Expression SEMICOLON
-    |   GET SEMICOLON
+    :   kw=GET LCURL functionBody=FunctionBody RCURL
+    |   kw=GET ASSIGNMENT javaRefer=DOTIdentifier SEMICOLON
+    |   kw=GET ASSIGNMENT expression=Expression SEMICOLON
+    |   kw=GET SEMICOLON
     ;
 
 Setter
-    :   SET LCURL functionBody=FunctionBody RCURL
-    |   SET ASSIGNMENT javaRefer=JavaRefer SEMICOLON
-    |   SET ASSIGNMENT expression=Expression SEMICOLON
-    |   SET SEMICOLON
+    :   kw=SET LCURL functionBody=FunctionBody RCURL
+    |   kw=SET ASSIGNMENT javaRefer=DOTIdentifier SEMICOLON
+    |   kw=SET ASSIGNMENT expression=Expression SEMICOLON
+    |   kw=SET SEMICOLON
     ;
 
 GenericClassImplement
-    :   IMPL (isStatic?=STATIC)? (isFinal?=FINAL)? (isAbstract?=ABSTRACT)? CLASS id=ClassWithoutNamespace args=ReadOnlyArgs (COLON extendedClassName+=ClassName (COMMA extendedClassName+=ClassName)*)? (body=ClassBody | SEMICOLON)
+    :   kw+=IMPL (isStatic?=STATIC)? (isFinal?=FINAL)? (isAbstract?=ABSTRACT)? kw+=CLASS id=Identifier args=ReadOnlyArgs (COLON inheritance=ClassInHeritance)? (body=ClassBody | SEMICOLON)
     ;
 
 //数据模板
 TemplateDeclaration
-    :   (isFinal?=FINAL)? DATA id=ClassWithoutNamespace params=ReadOnlyParams? ((COLON extendedTemplateName+=ClassName (COMMA extendedTemplateName+=ClassName)*) | AS type_=Type)? (body=TemplateBody | SEMICOLON)
+    :   (isFinal?=FINAL)? kw+=DATA id=Identifier params=ReadOnlyParams? ((COLON TemplateInheritance) | kw+=AS type_=Type)? (body=TemplateBody | SEMICOLON)
+    ;
+
+TemplateInheritance
+    :   extendedTemplateName+=[TemplateDeclaration:Identifier] (COMMA extendedTemplateName+=[TemplateDeclaration:Identifier])*
     ;
 
 //数据模板
 ObjectTemplateDeclaration
-    :   (isFinal?=FINAL)? OBJECT DATA id=ClassWithoutNamespace params=ReadOnlyParams? (COLON extendedTemplateName+=ClassName (COMMA extendedTemplateName+=ClassName)*)? (body=TemplateBody | SEMICOLON)
+    :   (isFinal?=FINAL)? kw+=OBJECT kw+=DATA id=Identifier params=ReadOnlyParams? (COLON TemplateInheritance)? (body=TemplateBody | SEMICOLON)
     ;
 
 TemplateBody
@@ -187,11 +196,11 @@ TemplateMember
     ;
 
 TemplateFunctionDeclaration
-    :   (isOverride?=OVERRIDE)? FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
+    :   (isOverride?=OVERRIDE)? kw=FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
     ;
 
 TemplateFieldDeclaration
-    :   (accessModifier=AccessModifier)? (isConst?=CONST)? VAR? id=Identifier (AS type_=TemplateType)? (ASSIGNMENT  initExpr=Expression)? accessor=Accessor? SEMICOLON
+    :   (isConst?=CONST)? kw+=VAR? id=Identifier (kw+=AS type_=TemplateType)? (ASSIGNMENT initExpr=Expression)? accessor=Accessor? SEMICOLON
     ;
 
 TemplateType
@@ -208,7 +217,11 @@ UnionTemplateFieldType
 
 //接口声明
 InterfaceDeclaration
-    :   INTERFACE id=ClassWithoutNamespace (ARROW extendedInterfaceName+=ClassName (COMMA extendedInterfaceName+=ClassName)*)? (body=InterfaceBody | SEMICOLON)
+    :   kw=INTERFACE id=Identifier (COLON InterfaceInheritance)? (body=InterfaceBody | SEMICOLON)
+    ;
+
+InterfaceInheritance
+    :   extendedInterfaceName+=[InterfaceDeclaration:Identifier] (COMMA extendedInterfaceName+=[InterfaceDeclaration:Identifier])*
     ;
 
 InterfaceBody
@@ -216,29 +229,29 @@ InterfaceBody
     ;
 
 InterfaceFunctionDeclaration
-    :   FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? SEMICOLON
+    :   kw=FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? SEMICOLON
     ;
 
 CompileTimeFuncDeclaration
-    :   CONST FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
+    :   kw+=CONST kw+=FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
     ;
 
 InlineFunctionDeclaration
-    :   INLINE FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
+    :   kw+=INLINE kw+=FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
     ;
 
 //函数声明
 FunctionDeclaration
-    :   FUNCTION id=Identifier params=FunctionParams? (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
+    :   kw=FUNCTION id=Identifier params=FunctionParams? (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
     ;
 
 ExtensionFunctionDeclaration
-    :   FUNCTION (targetType=Type DOT)? id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
+    :   kw=FUNCTION (targetType=Type DOT)? id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? LCURL body=FunctionBody RCURL
     ;
 
 //枚举
 EnumDeclaration
-    :   ENUM id=Identifier LCURL body=EnumBody RCURL
+    :   kw=ENUM id=Identifier LCURL body=EnumBody RCURL
     ;
 
 EnumBody
@@ -249,17 +262,12 @@ EnumMember
     :   id=Identifier (ASSIGNMENT value=NbtValue)?
     ;
 
-
 NamespaceID
-    : (namespace+=Identifier ( DOT namespace+=Identifier)* COLON)? id=Identifier
+    : (namespace=DOTIdentifier COLON)? id=Identifier
     ;
 
 NativeFuncDeclaration
-    :   FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? ASSIGNMENT javaRefer=JavaRefer SEMICOLON
-    ;
-
-JavaRefer returns string
-    :   Identifier (DOT Identifier)*
+    :   kw=FUNCTION id=Identifier params=FunctionParams (ARROW returnType=FunctionReturnType)? ASSIGNMENT javaRefer=DOTIdentifier SEMICOLON
     ;
 
 AccessModifier returns string
@@ -270,17 +278,17 @@ AccessModifier returns string
 
 //构造函数声明
 ClassConstructorDeclaration
-    :   accessModifier=AccessModifier? CONSTRUCTOR params=NormalParams LCURL body=FunctionBody RCURL
+    :   kw=CONSTRUCTOR params=NormalParams LCURL body=FunctionBody RCURL
     ;
 
 //构造函数声明
 TemplateConstructorDeclaration
-    :   accessModifier=AccessModifier? CONSTRUCTOR params=NormalParams LCURL body=FunctionBody RCURL
+    :   kw=CONSTRUCTOR params=NormalParams LCURL body=FunctionBody RCURL
     ;
 
 //变量声明
 FieldDeclaration
-    :   fieldModifier=FieldModifier? VAR id=Identifier (AS type_=Type)? (ASSIGNMENT initExpr=Expression)?
+    :   fieldModifier=FieldModifier? kw+=VAR id=Identifier (kw+=AS type_=Type)? (ASSIGNMENT initExpr=Expression)?
     ;
 
 FieldModifier returns string : CONST|DYNAMIC|IMPORT;
@@ -304,7 +312,7 @@ ParameterList
 
 //参数
 Parameter
-    :   (isStatic?=STATIC)? VAR? (id=Identifier AS)? type_=Type (ASSIGNMENT defaultValue=Value)?
+    :   (isStatic?=STATIC)? kw+=VAR? (id=Identifier kw+=AS)? type_=Type (ASSIGNMENT defaultValue=Value)?
     ;
 
 //表达式
@@ -320,7 +328,7 @@ StatementExpression
 
 //条件表达式
 ConditionalExpression
-    :   commonBinaryOperatorExpression=CommonBinaryOperatorExpression ( QUEST thenExpr=Expression COLON elseExpr=Expression)?
+    :   commonBinaryOperatorExpression=CommonBinaryOperatorExpression ( op+=QUEST thenExpr=Expression op+=COLON elseExpr=Expression)?
     ;
 
 //其他运算符
@@ -332,12 +340,12 @@ CommonBinaryOperator returns string: PIPE | Identifier;
 
 //或
 ConditionalOrExpression
-    :   conditionalAndExpression+=ConditionalAndExpression ( DISJ conditionalAndExpression+=ConditionalAndExpression )*
+    :   conditionalAndExpression+=ConditionalAndExpression ( op+=DISJ conditionalAndExpression+=ConditionalAndExpression )*
     ;
 
 //与
 ConditionalAndExpression
-    :   equalityExpression+=EqualityExpression ( CONJ equalityExpression+=EqualityExpression )*
+    :   equalityExpression+=EqualityExpression ( op+=CONJ equalityExpression+=EqualityExpression )*
     ;
 
 //等同
@@ -370,7 +378,7 @@ MultiplicativeExpression
 
 //一元表达式
 UnaryExpression
-    :   EXCL unaryExpression=UnaryExpression
+    :   op=EXCL unaryExpression=UnaryExpression
     |   castExpression=CastExpression
     |   rightVarExpression=RightVarExpression
     ;
@@ -382,7 +390,7 @@ RightVarExpression
 
 //强制类型转换表达式
 CastExpression
-    :  rightVarExpression=RightVarExpression AS type_=Type
+    :  rightVarExpression=RightVarExpression kw=AS type_=Type
     ;
 
 VarWithSelector
@@ -390,7 +398,7 @@ VarWithSelector
     ;
 
 JvmAccessExpression
-    :   propertyOperator=PropertyOperator (COLONCOLON id=Identifier)?
+    :   propertyOperator=PropertyOperator (op=COLONCOLON id=Identifier)?
     ;
 
 //字段操作器
@@ -399,7 +407,7 @@ PropertyOperator
     ;
 
 PropertyOperatorExpression
-    :   id=Identifier ASSIGNMENT expr=Expression
+    :   id=[ClassFieldDeclaration:Identifier] | id=[TemplateFieldDeclaration:Identifier] ASSIGNMENT expr=Expression
     ;
 
 //初级表达式
@@ -407,8 +415,8 @@ Primary
     :   range=Range
     |   value=Value
     |   var=Var
-    |   this=THIS
-    |   super=SUPER
+    |   this_=THIS
+    |   super_=SUPER
     |   type_=Type
     ;
 
@@ -423,7 +431,7 @@ BucketExpression
     ;
 
 VarWithSuffix
-    :   Identifier identifierSuffix+=IdentifierSuffix*
+    :   id=Identifier identifierSuffix+=IdentifierSuffix*
     ;
 
 FunctionCall
@@ -432,12 +440,7 @@ FunctionCall
 
 IdentifierSuffix
     :   LSQUARE conditionalExpression=ConditionalExpression RSQUARE
-    |   LSQUARE objectInitializer+=ObjectInitializer  (COMMA objectInitializer+=ObjectInitializer)* RSQUARE
     |   LSQUARE RSQUARE //empty bucket
-    ;
-
-ObjectInitializer
-    :   id=Identifier ASSIGNMENT expr=Expression
     ;
 
 Selector
@@ -475,7 +478,7 @@ Statement
     ;
 
 ExecuteStatement
-    :   EXECUTE LPAREN executeContext+=ExecuteContext (COMMA executeContext+=ExecuteContext)* RPAREN block=Block
+    :   kw=EXECUTE LPAREN executeContext+=ExecuteContext (COMMA executeContext+=ExecuteContext)* RPAREN block=Block
     ;
 
 ExecuteContext
@@ -492,31 +495,31 @@ ControlStatement returns string
     ;
 
 IfStatement
-    :   IF LPAREN conditionExpr=Expression RPAREN block=Block elseIfStatement+=ElseIfStatement* elseStatement=ElseStatement?
+    :   kw+=IF LPAREN conditionExpr=Expression RPAREN block=Block elseIfStatement+=ElseIfStatement* elseStatement=ElseStatement?
     ;
 
 ElseIfStatement
-    :   ELSE IF LPAREN conditionExpr=Expression RPAREN block=Block
+    :   kw+=ELSE kw+=IF LPAREN conditionExpr=Expression RPAREN block=Block
     ;
 
 ElseStatement
-    :   ELSE block=Block
+    :   kw+=ELSE block=Block
     ;
 
 WhileStatement
-    :   WHILE LPAREN conditionExpr=Expression RPAREN block=Block
+    :   kw+=WHILE LPAREN conditionExpr=Expression RPAREN block=Block
     ;
 
 DoWhileStatement
-    :   DO block=Block WHILE LPAREN conditionExpr=Expression RPAREN
+    :   kw+=DO block=Block kw+=WHILE LPAREN conditionExpr=Expression RPAREN
     ;
 
 TryStoreStatement
-    :   TRY block=Block STORE LPAREN identifier=Identifier RPAREN SEMICOLON
+    :   kw+=TRY block=Block kw+=STORE LPAREN identifier=Identifier RPAREN SEMICOLON
     ;
 
 ReturnStatement
-    : RETURN Expression?
+    :   kw+=RETURN Expression?
     ;
 
 Block
@@ -541,14 +544,14 @@ TypeWithoutExcl
     |   isEntity?=ENTITY LANGLE entityLimit=NbtInt RANGLE
     |   isEntity?=ENTITY LANGLE entityType+=LineString (COMMA entityType+=LineString)* RANGLE
     |   isEntity?=ENTITY LANGLE entityLimit=NbtInt COMMA entityType+=LineString (COMMA entityType+=LineString)* RANGLE
-    |   className=ClassName args=ReadOnlyArgs?
+    |   className=NamespaceID args=ReadOnlyArgs?
     |   id=Identifier
     |   unionTemplateType=UnionTemplateType
     |   anonymousTemplateType=AnonymousTemplateType
     ;
 
 AnonymousTemplateType
-    :   DATA (COLON extendedTemplateName+=ClassName (COMMA extendedTemplateName+=ClassName)*)? body=TemplateBody
+    :   kw=DATA (COLON extendedTemplateName+=NamespaceID (COMMA extendedTemplateName+=NamespaceID)*)? body=TemplateBody
     ;
 
 UnionTemplateType
@@ -582,7 +585,6 @@ FunctionReturnType
 
 Value
     :   coordinate=Coordinate
-    |   lineString=LineString
     |   nbtValue=NbtValue
     |   targetSelector=TargetSelector
     |   isNull?=NULL
@@ -596,16 +598,8 @@ CoordinateDimension
     :   (relativeValue=RelativeValue | nbtInt=NbtInt | nbtFloat=NbtFloat | nbtDouble=NbtDouble)
     ;
 
-ClassName returns string
-    :   (Identifier (DOT Identifier)* COLON)? ClassWithoutNamespace
-    ;
-
-ClassWithoutNamespace returns string
-    :   Identifier
-    ;
-
 Annotation
-    :   AT id=Identifier args=AnnotationArgs?
+    :   kw=AT id=Identifier args=AnnotationArgs?
     ;
 
 AnnotationArgs
@@ -613,25 +607,25 @@ AnnotationArgs
     ;
 
 Range
-    :   num1=Var RANGE num2=Var
-    |   num1=Var RANGE
-    |   RANGE num2=Var
+    :   num1=Var op=RANGE num2=Var
+    |   num1=Var op=RANGE
+    |   op=RANGE num2=Var
     ;
 
 NbtValue
-    :   LineString
-    |   NbtBool
-    |   NbtByte
-    |   NbtShort
-    |   NbtInt
-    |   NbtLong
-    |   NbtFloat
-    |   NbtDouble
-    |   NBTCompound
-    |   NBTList
-    |   NBTByteArray
-    |   NBTIntArray
-    |   NBTLongArray
+    :   str=LineString
+    |   bool=NbtBool
+    |   byte=NbtByte
+    |   short=NbtShort
+    |   int=NbtInt
+    |   long=NbtLong
+    |   float=NbtFloat
+    |   double=NbtDouble
+    |   compound=NBTCompound
+    |   list=NBTList
+    |   byteArray=NBTByteArray
+    |   intArray=NBTIntArray
+    |   longArray=NBTLongArray
     ;
 
 NbtByte returns number: NBTByte;
@@ -642,9 +636,9 @@ NbtFloat returns number: NBTFloat;
 NbtDouble returns number: NBTDouble;
 NbtBool returns boolean: NBTBool;
 
-NBTByteArray: NBT_BYTE_ARRAY_BEGIN nbtByte+=NbtByte (COMMA nbtByte+=NbtByte)* RSQUARE;
-NBTIntArray: NBT_INT_ARRAY_BEGIN nbtInt+=NbtInt (COMMA nbtInt+=NbtInt)* RSQUARE;
-NBTLongArray: NBT_LONG_ARRAY_BEGIN nbtLong+=NbtLong (COMMA nbtLong+=NbtLong)* RSQUARE;
+NBTByteArray: NBT_BYTE_ARRAY_BEGIN e+=NbtByte (COMMA e+=NbtByte)* RSQUARE;
+NBTIntArray: NBT_INT_ARRAY_BEGIN e+=NbtInt (COMMA e+=NbtInt)* RSQUARE;
+NBTLongArray: NBT_LONG_ARRAY_BEGIN e+=NbtLong (COMMA e+=NbtLong)* RSQUARE;
 
 NBTList: LSQUARE (expression += Expression (COMMA expression += Expression)* )* RSQUARE;
 NBTKeyValuePair: key=Identifier COLON expression=Expression;

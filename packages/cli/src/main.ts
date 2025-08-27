@@ -1,4 +1,4 @@
-import type { compilationUnit } from 'mcfpp-language';
+import type { CompilationUnit } from 'mcfpp-language';
 import { createMcfppServices, McfppLanguageMetaData } from 'mcfpp-language';
 import chalk from 'chalk';
 import { Command } from 'commander';
@@ -15,7 +15,7 @@ const packageContent = await fs.readFile(packagePath, 'utf-8');
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createMcfppServices(NodeFileSystem).Mcfpp;
-    const model = await extractAstNode<compilationUnit>(fileName, services);
+    const model = await extractAstNode<CompilationUnit>(fileName, services);
     const generatedFilePath = generateJavaScript(model, fileName, opts.destination);
     console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 };
