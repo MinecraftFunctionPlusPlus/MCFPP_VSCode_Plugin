@@ -162,7 +162,6 @@ terminal ExponentPart
 
 terminal IntConstant : DecimalConstant|HexadecimalConstant|OctalConstant;
 
-terminal DOTIdentifier: /[_\p{L}][_\p{L}\p{Nd}]*(\.[_\p{L}][_\p{L}\p{Nd}]*)*/u;
 terminal Identifier: /[_\p{L}][_\p{L}\p{Nd}]*/u;
 terminal Letter: /[\p{L}]/u;
 terminal UnicodeDigit: /[\p{Nd}]/u;

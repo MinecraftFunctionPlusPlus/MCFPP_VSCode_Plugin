@@ -135,7 +135,7 @@ SupportOperator returns string
     |   DISJ
     |   CONJ
     |   PIPE
-    |   Identifier
+//    |   Identifier
     ;
 
 ClassFieldDeclaration
@@ -317,8 +317,7 @@ Parameter
 
 //表达式
 Expression
-    :   primary=Primary
-    |   commonBinaryOperatorExpression=CommonBinaryOperatorExpression
+    :   commonBinaryOperatorExpression=CommonBinaryOperatorExpression
     ;
 
 //能作为语句的表达式
@@ -336,7 +335,7 @@ CommonBinaryOperatorExpression
     :   conditionalOrExpression+=ConditionalOrExpression (op+=CommonBinaryOperator conditionalOrExpression+=ConditionalOrExpression)*
     ;
 
-CommonBinaryOperator returns string: PIPE | Identifier;
+CommonBinaryOperator returns string: PIPE /*| Identifier*/;
 
 //或
 ConditionalOrExpression
@@ -643,6 +642,9 @@ NBTLongArray: NBT_LONG_ARRAY_BEGIN e+=NbtLong (COMMA e+=NbtLong)* RSQUARE;
 NBTList: LSQUARE (expression += Expression (COMMA expression += Expression)* )* RSQUARE;
 NBTKeyValuePair: key=Identifier COLON expression=Expression;
 NBTCompound: LCURL( nbtKeyValuePair += NBTKeyValuePair (COMMA nbtKeyValuePair += NBTKeyValuePair)* )*RCURL;
+
+DOTIdentifier returns string: Identifier (DOT Identifier)*;
+
 
 //
 // Whitespace and comments

@@ -1,10 +1,10 @@
 import { type Module, inject } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type PartialLangiumServices } from 'langium/lsp';
 import { McfppGeneratedModule, McfppGeneratedSharedModule } from './generated/module.js';
-//import { MCFPPScopeProvider } from './mcfpp-scope-provider.js';
+import { MCFPPScopeProvider } from './mcfpp-scope-provider.js';
 import { MCFPPSemanticTokenProvider } from './lsp/mcfpp-semantictoken-provider.js';
-import { registerWorkspaceListener } from './mcfpp-workspace-listener.js';
-//import { MCFPPScopeComputation } from './mcfpp-scope-computation.js';
+//import { registerWorkspaceListener } from './mcfpp-workspace-listener.js';
+import { MCFPPScopeComputation } from './mcfpp-scope-computation.js';
 
 /**
  * Union of Langium default services and your custom services - use this as constructor parameter
@@ -22,8 +22,8 @@ export const McfppModule: Module<McfppServices, PartialLangiumServices> = {
         SemanticTokenProvider: (services) => new MCFPPSemanticTokenProvider(services),
     },
     references: {
-        //ScopeProvider: (services) => new MCFPPScopeProvider(services),
-        //ScopeComputation: (services) => new MCFPPScopeComputation(services)
+        ScopeProvider: (services) => new MCFPPScopeProvider(services),
+        ScopeComputation: (services) => new MCFPPScopeComputation(services)
     }
 };
 
@@ -56,7 +56,7 @@ export function createMcfppServices(context: DefaultSharedModuleContext): {
         McfppModule
     );
     shared.ServiceRegistry.register(Mcfpp);
-    registerWorkspaceListener(Mcfpp);
+    //registerWorkspaceListener(Mcfpp);
     if (!context.connection) {
         // We don't run inside a language server
         // Therefore, initialize the configuration provider instantly
